@@ -9,7 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 def scrape_all():
     # Initiate headless driver for deployment
     executable_path = {'executable_path': ChromeDriverManager().install()}
-    browser = Browser('chrome', **executable_path, headless=True)
+    browser = Browser("chrome", executable_path="chromedriver", headless=True)
 
     news_title, news_paragraph = mars_news(browser)
 
@@ -19,6 +19,7 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
+        "hemispheres": hemispheres(browser),
         "last_modified": dt.datetime.now()
     }
 
@@ -96,6 +97,28 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def mars_hemis(browser):
+    # 1. Use the browser to visit the URL
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url)
+
+    # 2. Create a list to hold the images and titles
+    hemisphere_image_urls = []
+
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
+    for hemis in range(4):
+        browser.links.find_by_partial_text('Hemisphere')[hemis].click()
+        html = browser.html
+        hemi_soup = soup(html, 'html.parser')
+        title = hemi_soup.find('h2', class_='title').text
+        img_url = hemi_soup.find('li').a.get('href')
+        hemispheres = {}
+        hemispheres['img_url'] = f'https://marshemispheres.com/{img_url}'
+        hemispheres['title'] = title
+        hemisphere_image_urls.append(hemispheres)
+        browser.back()
+    return hemisphere_image_urls
 
 if __name__ == "__main__":
 
